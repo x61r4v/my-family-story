@@ -272,8 +272,6 @@ image-slot.js         drag-&-drop photo slots
 .image-slots.state.json ┘ (safe to carry along; baked changes graduate out)
 ```
 
-The remaining `*.html` files are design explorations from building the app - kept as a record, not needed to run it.
-
 ---
 
 ## The story behind this project
