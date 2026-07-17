@@ -175,7 +175,7 @@ The archivist's desk - everything editable, in one place (editor mode, ☰ menu)
 
 ## Saving your work — the publish flow
 
-This is the one unusual - and honestly, kind of magical - part. There is no server. **Claude is the server.**
+This is the one unusual - and honestly, kind of magical - part. There is no server. **Claude is the server.** I call this technique the **AIOS Engine Artifact** 🥁 - coined right here.
 
 This flow is for the changes you make **in the app's UI** - dropped photos, crops, edits, new people, moments. Changes you ask for **in the Claude chat** don't need it: Claude writes those straight into the files, and they're saved the moment it finishes.
 
