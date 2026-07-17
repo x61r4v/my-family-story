@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="design_doc_mode" content="canvas" />
+<title>Add-moment explorations</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --paper:#F4EFE4; --surface:#FFFDF7; --surface-2:#FAF5EA; --surface-3:#F2EADb;
+  --ink:#26211A; --ink-2:#6B6256; --ink-3:#9A9082;
+  --line:#E4DBC8; --line-2:#D6CBB3;
+  --blue:#0C66E4; --blue-subtle:#E9F2FF; --blue-border:#9FC1F5;
+  --amber:#B07D2B; --amber-d:#8A6017; --amber-subtle:#F6ECD6;
+  --shadow-node:0 1px 2px rgba(38,33,26,.10), 0 2px 6px rgba(38,33,26,.06);
+  --shadow-xs:0 1px 2px rgba(38,33,26,.10);
+  --shadow-pop:0 8px 28px rgba(38,33,26,.16), 0 2px 8px rgba(38,33,26,.08);
+  --font-ui:'Inter',system-ui,-apple-system,sans-serif;
+  --font-body:'Roboto',system-ui,sans-serif;
+  --font-serif:'Newsreader',Georgia,serif;
+}
+*{ box-sizing:border-box; }
+html,body{ margin:0; }
+body{ background:#E7E1D3; font-family:var(--font-body); }
+
+/* ---- canvas headline ---- */
+.doc-head{ position:absolute; left:40px; top:34px; width:900px; }
+.doc-head h1{ font-family:var(--font-serif); font-weight:600; font-size:30px; color:var(--ink); margin:0 0 6px; letter-spacing:.2px; }
+.doc-head p{ font-family:var(--font-body); font-size:14px; line-height:1.6; color:var(--ink-2); margin:0; max-width:760px; }
+
+/* ---- frame + caption ---- */
+.frame{ position:absolute; width:440px; }
+.frame-cap{ margin-bottom:14px; }
+.frame-cap .tag{ display:inline-block; font-family:var(--font-ui); font-weight:700; font-size:11px; letter-spacing:.6px; text-transform:uppercase; color:var(--amber-d); background:var(--amber-subtle); border:1px solid #E7D6AE; padding:3px 9px; border-radius:9999px; }
+.frame-cap h3{ font-family:var(--font-ui); font-weight:600; font-size:17px; color:var(--ink); margin:9px 0 5px; }
+.frame-cap p{ font-family:var(--font-body); font-size:12.5px; line-height:1.55; color:var(--ink-2); margin:0; }
+
+/* ---- panel (mirror of .focus-right) ---- */
+.panel{ background:var(--surface); border:1px solid var(--line-2); border-radius:16px; box-shadow:var(--shadow-node); overflow:hidden; }
+.panel-head{ display:flex; align-items:center; justify-content:space-between; padding:13px 16px; border-bottom:1px solid var(--line); }
+.panel-head .lf-title{ font-family:var(--font-ui); font-weight:600; font-size:14px; color:var(--ink); }
+.panel-head .seg-mini{ display:flex; background:var(--surface-3); border:1px solid var(--line); border-radius:8px; padding:2px; }
+.panel-head .seg-mini span{ padding:4px 10px; border-radius:6px; font-family:var(--font-ui); font-weight:500; font-size:12px; color:var(--ink-2); }
+.panel-head .seg-mini span.on{ background:var(--surface); color:var(--blue); box-shadow:var(--shadow-xs); }
+.post-log{ padding:8px; display:flex; flex-direction:column; gap:2px; }
+
+/* ---- post (mirror of app) ---- */
+.post{ padding:10px 12px; border-radius:10px; position:relative; }
+.post.now{ background:var(--amber-subtle); }
+.post.open{ background:var(--surface-2); }
+.post.now::before{ content:''; position:absolute; left:0; top:8px; bottom:8px; width:3px; border-radius:2px; background:var(--amber); }
+.post-top{ display:flex; align-items:center; gap:11px; }
+.post-year{ font-family:var(--font-ui); font-weight:600; font-size:13px; color:var(--ink-2); width:40px; flex:0 0 auto; }
+.post-icon{ display:inline-flex; align-items:center; justify-content:center; width:22px; flex:0 0 auto; color:var(--amber); }
+.post-icon.self{ color:var(--ink-2); }
+.post-title{ font-family:var(--font-body); font-size:14px; color:var(--ink); flex:1; min-width:0; }
+.post-title.major{ font-weight:600; font-family:var(--font-ui); letter-spacing:-.1px; }
+.post-haspic{ color:var(--amber-d); flex:0 0 auto; display:inline-flex; }
+.post-chev{ font-family:var(--font-ui); font-size:16px; color:var(--ink-3); width:16px; text-align:center; flex:0 0 auto; }
+.post-expand{ margin-left:51px; }
+.post-story{ margin:8px 0 4px; padding:12px 14px; background:var(--surface); border:1px solid var(--line); border-radius:10px;
+  font-family:var(--font-body); font-size:13px; line-height:1.6; color:var(--ink-2); box-shadow:var(--shadow-xs); }
+
+/* ---- map chip (mock, single tile cover) ---- */
+.map-chip{ position:relative; flex:0 0 132px; width:132px; height:132px; border-radius:12px; overflow:hidden; border:1px solid var(--line-2); box-shadow:var(--shadow-xs); background:#dbe4ea; }
+.map-chip img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+.map-pin{ position:absolute; left:50%; top:50%; width:13px; height:13px; border-radius:50%; background:var(--amber-d); border:2.5px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,.45); transform:translate(-50%,-50%); z-index:2; }
+.map-label{ position:absolute; left:0; right:0; bottom:0; z-index:2; padding:5px 7px; font-family:var(--font-body); font-size:10.5px; color:#fff; background:linear-gradient(to top, rgba(0,0,0,.62), rgba(0,0,0,0)); }
+.photo-mock{ flex:1 1 0; min-width:0; height:132px; border-radius:12px; overflow:hidden; border:1px solid var(--line-2); box-shadow:var(--shadow-xs); }
+.photo-mock img{ width:100%; height:100%; object-fit:cover; display:block; }
+.media-row{ display:flex; gap:10px; align-items:stretch; margin-top:10px; }
+
+svg{ display:block; }
+
+/* ===== BASELINE — big placeholder ===== */
+.pm-ghost-lg{ flex:1 1 0; min-width:0; height:132px; border:1.5px dashed var(--line-2); border-radius:12px; display:flex; flex-direction:column; gap:7px; align-items:center; justify-content:center; color:var(--ink-3); font-family:var(--font-ui); font-size:12px; text-align:center; background:var(--surface-2); }
+
+/* ===== OPTION A — hairline actions + insert ===== */
+.mm-actions{ display:flex; gap:16px; margin-top:10px; padding-left:2px; }
+.mm-act{ display:inline-flex; align-items:center; gap:5px; font-family:var(--font-ui); font-weight:500; font-size:12px; color:var(--ink-3); cursor:pointer; }
+.mm-act.armed{ color:var(--amber-d); }
+.mm-act:hover{ color:var(--amber-d); }
+.mm-insert{ position:relative; height:20px; margin:1px 0; }
+.mm-insert .ln{ position:absolute; left:51px; right:10px; top:50%; height:1px; background:linear-gradient(to right, var(--line-2), var(--line-2)); }
+.mm-insert .btn{ position:absolute; left:40px; top:50%; transform:translateY(-50%); display:inline-flex; align-items:center; gap:5px; background:var(--surface); border:1px solid var(--line-2); border-radius:9999px; padding:2px 9px 2px 6px; font-family:var(--font-ui); font-weight:600; font-size:11px; color:var(--ink-2); box-shadow:var(--shadow-xs); }
+.mm-insert.ghosted .ln{ opacity:.5; }
+.mm-insert.ghosted .btn{ color:var(--ink-3); border-style:dashed; background:transparent; box-shadow:none; }
+
+/* ===== OPTION B — gutter + ===== */
+.rail-post{ position:relative; }
+.rail{ position:absolute; left:19px; top:0; bottom:0; width:2px; background:var(--line); }
+.rail-node{ position:absolute; left:14px; width:12px; height:12px; border-radius:50%; background:var(--surface); border:2px solid var(--amber); top:16px; }
+.rail-insert{ position:relative; height:26px; }
+.rail-insert .ln{ position:absolute; left:19px; top:0; bottom:0; width:2px; background:var(--line); }
+.rail-insert .plus{ position:absolute; left:11px; top:50%; transform:translateY(-50%); width:18px; height:18px; border-radius:50%; background:var(--surface); border:1.5px solid var(--blue-border); color:var(--blue); display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow-xs); }
+.rail-insert .lbl{ position:absolute; left:40px; top:50%; transform:translateY(-50%); font-family:var(--font-ui); font-weight:600; font-size:11px; color:var(--blue); }
+.inline-tools{ display:inline-flex; gap:4px; margin-left:6px; }
+.inline-tools button{ width:26px; height:26px; border-radius:7px; border:1px solid var(--line-2); background:var(--surface); color:var(--ink-2); display:inline-flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
+.inline-tools button:hover{ color:var(--amber-d); border-color:var(--amber); background:var(--amber-subtle); }
+
+/* ===== OPTION C — composer chip + menu ===== */
+.mm-chip{ display:inline-flex; align-items:center; gap:7px; margin-top:10px; padding:6px 12px; border:1px solid var(--line-2); border-radius:9999px; background:var(--surface); font-family:var(--font-ui); font-weight:600; font-size:12px; color:var(--ink-2); box-shadow:var(--shadow-xs); cursor:pointer; }
+.mm-chip:hover{ border-color:var(--amber); color:var(--amber-d); }
+.mm-menu{ margin-top:8px; width:210px; background:var(--surface); border:1px solid var(--line-2); border-radius:11px; box-shadow:var(--shadow-pop); padding:5px; }
+.mm-menu button{ display:flex; align-items:center; gap:10px; width:100%; padding:8px 10px; border:none; background:transparent; border-radius:7px; font-family:var(--font-ui); font-weight:500; font-size:13px; color:var(--ink); text-align:left; cursor:pointer; }
+.mm-menu button:hover{ background:var(--surface-2); }
+.mm-menu .ic{ color:var(--amber-d); display:inline-flex; }
+.mm-menu .sub{ font-family:var(--font-body); font-size:11px; color:var(--ink-3); margin-left:auto; }
+
+/* ===== OPTION D — ghost tiles ===== */
+.mm-ghosts{ display:flex; gap:8px; margin-top:10px; align-items:stretch; }
+.mm-ghost{ width:66px; height:66px; border-radius:11px; border:1.5px dashed var(--line-2); background:var(--surface-2); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color:var(--ink-3); font-family:var(--font-ui); font-weight:500; font-size:9.5px; cursor:pointer; }
+.mm-ghost:hover{ border-color:var(--amber); color:var(--amber-d); background:var(--amber-subtle); }
+.map-chip.sm{ flex:0 0 66px; width:66px; height:66px; }
+.map-chip.sm .map-label{ font-size:8.5px; padding:3px 5px; }
+</style>
+</head>
+<body>
+
+<div class="doc-head">
+  <h1>Adding to a moment — quieter affordances</h1>
+  <p>Right now every expanded moment shows one big dashed “Add a photo” box. These directions make adding a <b>photo</b>, a <b>location</b>, or a written <b>note</b> feel lighter — and let you insert a whole new moment <b>above or below</b> an existing one, right from the life story. Same visual language as the app; hover/open states are shown frozen so you can read the interaction.</p>
+</div>
+
+<!-- ============ BASELINE ============ -->
+<div class="frame" style="left:40px; top:150px;">
+  <div class="frame-cap">
+    <span class="tag">Today</span>
+    <h3>The current placeholder</h3>
+    <p>One large dashed box per moment. Heavy, and there’s no way to add a moment in between.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span class="lf-title">Life story</span><span class="seg-mini"><span class="on">All 7</span><span>Major</span></span></div>
+    <div class="post-log">
+      <div class="post now open">
+        <div class="post-top"><span class="post-year">1926</span><span class="post-icon self"><svg width="19" height="19" viewBox="0 0 256 256" fill="currentColor"><path d="M128,24a104,104,0,1,0,104,104A104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Z"/></svg></span><span class="post-title">Born in Haifa, Israel</span><span class="post-chev">−</span></div>
+        <div class="post-expand">
+          <div class="post-story">Moshe was born in a two-room flat above the ironmonger’s in the lower city, the third of five and the only one with red hair.</div>
+          <div class="media-row">
+            <div class="pm-ghost-lg">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3.2"/><path d="M8 6l1.5-2.5h5L16 6"/></svg>
+              Add a photo from this moment
+            </div>
+            <div class="map-chip"><img src="https://a.basemaps.cartocdn.com/rastertiles/voyager/11/1223/826.png" alt="" /><span class="map-pin"></span><span class="map-label">Haifa, Israel</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="post"><div class="post-top"><span class="post-year">1928</span><span class="post-icon self"><svg width="18" height="18" viewBox="0 0 256 256" fill="currentColor"><path d="M239.2,97.29a16,16,0,0,0-13.81-11L166,81.17,142.72,25.81a16,16,0,0,0-29.44,0L90.07,81.17,30.61,86.32a16,16,0,0,0-9.11,28.06L66.61,153.8,53.09,212.34a16,16,0,0,0,23.84,17.34l51-31,51.11,31a16,16,0,0,0,23.84-17.34l-13.52-58.54,45.1-39.42A16,16,0,0,0,239.2,97.29Z"/></svg></span><span class="post-title">The washtub photograph</span><span class="post-haspic"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="9"/></svg></span><span class="post-chev">›</span></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ OPTION A ============ -->
+<div class="frame" style="left:520px; top:150px;">
+  <div class="frame-cap">
+    <span class="tag">Option A</span>
+    <h3>Hairline actions</h3>
+    <p>Quiet text actions sit under the note and brighten on hover. A faint hairline between moments carries an “Add a moment” — insert above or below any shot.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span class="lf-title">Life story</span><span class="seg-mini"><span class="on">All 7</span><span>Major</span></span></div>
+    <div class="post-log">
+      <div class="post now open">
+        <div class="post-top"><span class="post-year">1926</span><span class="post-icon self"><svg width="19" height="19" viewBox="0 0 256 256" fill="currentColor"><path d="M128,24a104,104,0,1,0,104,104A104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Z"/></svg></span><span class="post-title">Born in Haifa, Israel</span><span class="post-chev">−</span></div>
+        <div class="post-expand">
+          <div class="post-story">Moshe was born in a two-room flat above the ironmonger’s in the lower city, the third of five and the only one with red hair.</div>
+          <div class="media-row">
+            <div class="map-chip"><img src="https://a.basemaps.cartocdn.com/rastertiles/voyager/11/1223/826.png" alt="" /><span class="map-pin"></span><span class="map-label">Haifa, Israel</span></div>
+          </div>
+          <div class="mm-actions">
+            <span class="mm-act"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M8 6l1.4-2.3h5.2L16 6"/></svg>Photo</span>
+            <span class="mm-act armed"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg>Location ✓</span>
+            <span class="mm-act"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h14v16l-4-3H5z"/></svg>Note</span>
+          </div>
+        </div>
+      </div>
+      <div class="mm-insert"><span class="ln"></span><span class="btn"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>Add a moment</span></div>
+      <div class="post"><div class="post-top"><span class="post-year">1928</span><span class="post-icon self"><svg width="18" height="18" viewBox="0 0 256 256" fill="currentColor"><path d="M239.2,97.29a16,16,0,0,0-13.81-11L166,81.17,142.72,25.81a16,16,0,0,0-29.44,0L90.07,81.17,30.61,86.32a16,16,0,0,0-9.11,28.06L66.61,153.8,53.09,212.34a16,16,0,0,0,23.84,17.34l51-31,51.11,31a16,16,0,0,0,23.84-17.34l-13.52-58.54,45.1-39.42A16,16,0,0,0,239.2,97.29Z"/></svg></span><span class="post-title">The washtub photograph</span><span class="post-haspic"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="9"/></svg></span><span class="post-chev">›</span></div></div>
+      <div class="mm-insert ghosted"><span class="ln"></span><span class="btn"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>Add a moment</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ OPTION B ============ -->
+<div class="frame" style="left:1000px; top:150px;">
+  <div class="frame-cap">
+    <span class="tag">Option B</span>
+    <h3>Timeline gutter</h3>
+    <p>The year gutter becomes a real thread. A small ＋ node lives on the line between moments; each shot carries tiny camera / pin icon-buttons at the end of its row.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span class="lf-title">Life story</span><span class="seg-mini"><span class="on">All 7</span><span>Major</span></span></div>
+    <div class="post-log">
+      <div class="post now open rail-post">
+        <div class="rail"></div><div class="rail-node"></div>
+        <div class="post-top"><span class="post-year">1926</span><span class="post-title">Born in Haifa, Israel</span>
+          <span class="inline-tools">
+            <button title="Add photo"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M8 6l1.4-2.3h5.2L16 6"/></svg></button>
+            <button title="Add location"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></button>
+          </span>
+        </div>
+        <div class="post-expand">
+          <div class="post-story">Moshe was born in a two-room flat above the ironmonger’s in the lower city, the third of five and the only one with red hair.</div>
+          <div class="media-row"><div class="map-chip"><img src="https://a.basemaps.cartocdn.com/rastertiles/voyager/11/1223/826.png" alt="" /><span class="map-pin"></span><span class="map-label">Haifa, Israel</span></div></div>
+        </div>
+      </div>
+      <div class="rail-insert"><span class="ln"></span><span class="plus"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M12 5v14M5 12h14"/></svg></span><span class="lbl">Add a moment here</span></div>
+      <div class="post rail-post">
+        <div class="rail"></div><div class="rail-node" style="border-color:var(--amber)"></div>
+        <div class="post-top"><span class="post-year">1928</span><span class="post-title">The washtub photograph</span><span class="post-haspic"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="9"/></svg></span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ OPTION C ============ -->
+<div class="frame" style="left:1480px; top:150px;">
+  <div class="frame-cap">
+    <span class="tag">Option C</span>
+    <h3>One composer chip</h3>
+    <p>A single unobtrusive pill. Tap it and a small menu offers Photo, Location, or Note — one entry point, nothing cluttering the moment until you ask.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span class="lf-title">Life story</span><span class="seg-mini"><span class="on">All 7</span><span>Major</span></span></div>
+    <div class="post-log">
+      <div class="post now open">
+        <div class="post-top"><span class="post-year">1926</span><span class="post-icon self"><svg width="19" height="19" viewBox="0 0 256 256" fill="currentColor"><path d="M128,24a104,104,0,1,0,104,104A104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Z"/></svg></span><span class="post-title">Born in Haifa, Israel</span><span class="post-chev">−</span></div>
+        <div class="post-expand">
+          <div class="post-story">Moshe was born in a two-room flat above the ironmonger’s in the lower city, the third of five and the only one with red hair.</div>
+          <div class="mm-chip"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Add to this moment ▾</div>
+          <div class="mm-menu">
+            <button><span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M8 6l1.4-2.3h5.2L16 6"/></svg></span>Photo<span class="sub">drop or browse</span></button>
+            <button><span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11Z"/><circle cx="12" cy="10" r="2.5"/></svg></span>Location<span class="sub">on map</span></button>
+            <button><span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h14v16l-4-3H5z"/></svg></span>Note<span class="sub">write</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="post"><div class="post-top"><span class="post-year">1928</span><span class="post-icon self"><svg width="18" height="18" viewBox="0 0 256 256" fill="currentColor"><path d="M239.2,97.29a16,16,0,0,0-13.81-11L166,81.17,142.72,25.81a16,16,0,0,0-29.44,0L90.07,81.17,30.61,86.32a16,16,0,0,0-9.11,28.06L66.61,153.8,53.09,212.34a16,16,0,0,0,23.84,17.34l51-31,51.11,31a16,16,0,0,0,23.84-17.34l-13.52-58.54,45.1-39.42A16,16,0,0,0,239.2,97.29Z"/></svg></span><span class="post-title">The washtub photograph</span><span class="post-haspic"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="9"/></svg></span><span class="post-chev">›</span></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ OPTION D ============ -->
+<div class="frame" style="left:1960px; top:150px;">
+  <div class="frame-cap">
+    <span class="tag">Option D</span>
+    <h3>Small ghost tiles</h3>
+    <p>Instead of one big box, tiny 66px ghost tiles for what’s missing. A location fills into the real mini-map; the photo tile stays a quiet dashed square until dropped on.</p>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><span class="lf-title">Life story</span><span class="seg-mini"><span class="on">All 7</span><span>Major</span></span></div>
+    <div class="post-log">
+      <div class="post now open">
+        <div class="post-top"><span class="post-year">1926</span><span class="post-icon self"><svg width="19" height="19" viewBox="0 0 256 256" fill="currentColor"><path d="M128,24a104,104,0,1,0,104,104A104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Z"/></svg></span><span class="post-title">Born in Haifa, Israel</span><span class="post-chev">−</span></div>
+        <div class="post-expand">
+          <div class="post-story">Moshe was born in a two-room flat above the ironmonger’s in the lower city, the third of five and the only one with red hair.</div>
+          <div class="mm-ghosts">
+            <div class="map-chip sm"><img src="https://a.basemaps.cartocdn.com/rastertiles/voyager/11/1223/826.png" alt="" /><span class="map-pin"></span><span class="map-label">Haifa</span></div>
+            <div class="mm-ghost"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3"/><path d="M8 6l1.4-2.3h5.2L16 6"/></svg>Photo</div>
+            <div class="mm-ghost"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M5 4h14v16l-4-3H5z"/></svg>Note</div>
+          </div>
+        </div>
+      </div>
+      <div class="mm-insert ghosted"><span class="ln"></span><span class="btn"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 5v14M5 12h14"/></svg>Add a moment</span></div>
+      <div class="post"><div class="post-top"><span class="post-year">1928</span><span class="post-icon self"><svg width="18" height="18" viewBox="0 0 256 256" fill="currentColor"><path d="M239.2,97.29a16,16,0,0,0-13.81-11L166,81.17,142.72,25.81a16,16,0,0,0-29.44,0L90.07,81.17,30.61,86.32a16,16,0,0,0-9.11,28.06L66.61,153.8,53.09,212.34a16,16,0,0,0,23.84,17.34l51-31,51.11,31a16,16,0,0,0,23.84-17.34l-13.52-58.54,45.1-39.42A16,16,0,0,0,239.2,97.29Z"/></svg></span><span class="post-title">The washtub photograph</span><span class="post-haspic"><svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="9"/></svg></span><span class="post-chev">›</span></div></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="design_doc_mode" content="canvas">
+<title>Life Story Arc — moving timeline concept</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F4EFE4; --canvas:#EBE4D4; --canvas-dot:#D8CEB8;
+  --surface:#FFFDF7; --surface-2:#FAF5EA; --surface-3:#F1EADA;
+  --ink:#26211A; --ink-2:#5C5546; --ink-3:#8E8672;
+  --line:#E3DBC8; --line-2:#D5CBB2; --line-3:#BFB394;
+  --blue:#0C66E4; --amber:#B07D2B; --amber-d:#8A6017; --amber-subtle:#F6ECD6;
+  --font-ui:'Inter',system-ui,sans-serif; --font-serif:'Newsreader',Georgia,serif;
+}
+a{ color:var(--blue); } a:hover{ color:#0055CC; }
+body{ margin:0; font-family:var(--font-ui); color:var(--ink); }
+
+.frame{ position:absolute; left:40px; top:40px; width:620px; background:var(--paper); border:1px solid var(--line-2);
+  border-radius:18px; padding:26px 30px 22px; box-shadow:0 4px 24px rgba(38,33,26,.08); box-sizing:border-box; }
+.frame h2{ font-family:var(--font-serif); font-weight:700; font-size:24px; margin:0 0 4px; }
+.frame .sub{ font-size:13.5px; color:var(--ink-2); margin:0 0 16px; }
+.notes{ margin:16px 4px 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:7px; }
+.notes li{ font-size:12.5px; color:var(--ink-2); position:relative; padding-left:14px; }
+.notes li::before{ content:''; position:absolute; left:0; top:6px; width:6px; height:6px; border-radius:50%; background:var(--amber); }
+
+/* ---------- the story panel mock ---------- */
+.panel{ width:460px; margin:0 auto; background:var(--surface); border:1px solid var(--line); border-radius:20px;
+  box-shadow:0 10px 30px rgba(38,33,26,.12); padding:16px 0 14px; overflow:hidden; user-select:none; }
+.p-chip{ width:max-content; margin:0 auto 6px; background:#CDEFF4; color:#0B4A52; font-size:12.5px; font-weight:600;
+  padding:4px 12px; border-radius:9999px; }
+
+/* ---------- arc ---------- */
+.arc{ position:relative; height:104px; cursor:grab; touch-action:none; }
+.arc:active{ cursor:grabbing; }
+.arc svg{ position:absolute; inset:0; width:100%; height:100%; }
+.tick{ position:absolute; transform:translate(-50%,-50%); pointer-events:none; display:flex; flex-direction:column; align-items:center; gap:3px; }
+.tick .dot{ width:8px; height:8px; border-radius:50%; background:var(--line-3); }
+.tick .yr{ font-family:var(--font-serif); font-weight:600; font-size:15px; color:var(--ink-3); line-height:1; }
+.apex{ position:absolute; transform:translate(-50%,0); display:flex; flex-direction:column; align-items:center; gap:2px; pointer-events:none; }
+.apex .dot{ width:9px; height:9px; border-radius:50%; background:var(--amber-d); }
+.apex .yr{ font-family:var(--font-serif); font-weight:700; font-size:24px; color:var(--amber-d); line-height:1.1; }
+.arc-hint{ position:absolute; left:0; right:0; bottom:-2px; text-align:center; font-size:11.5px; color:var(--ink-3); pointer-events:none; }
+
+/* ---------- lanes ---------- */
+.lanes{ position:relative; margin-top:16px; cursor:grab; touch-action:none; }
+.lanes:active{ cursor:grabbing; }
+.lane{ position:relative; }
+.lane.personal{ height:150px; }
+.lane.personal.row2{ height:150px; margin-top:2px; }
+.lane.family{ height:170px; margin-top:2px; }
+/* the quiet axis each lane's pills sit on */
+.lane-axis{ position:absolute; left:10px; right:10px; top:27px; border-top:1px dashed var(--line-2); pointer-events:none; }
+
+/* deck = one event (or a cluster) anchored at its year */
+.deck{ position:absolute; top:0; transform:translateX(-50%); }
+/* compact state: a small year pill riding the axis */
+.deck .pk{ position:absolute; left:50%; top:18px; transform:translateX(-50%); white-space:nowrap;
+  background:var(--surface-2); border:1px solid var(--line-2); color:var(--ink-2);
+  font-size:11.5px; font-weight:600; padding:3px 10px; border-radius:9999px;
+  transition:opacity .2s ease, transform .2s ease; cursor:pointer; }
+.lane.personal .deck .pk{ background:var(--amber-subtle); border-color:color-mix(in srgb,var(--amber) 32%,transparent); color:var(--amber-d); }
+.deck .pk .n{ opacity:.65; font-weight:500; }
+/* expanded state: the full card, unfolds when the moment reaches "now" */
+.deck .dcards{ position:absolute; left:50%; top:14px; transform:translateX(-50%) scale(.92); width:172px;
+  opacity:0; pointer-events:none; transition:opacity .22s ease, transform .22s ease; }
+.lane.family .deck .dcards{ width:188px; }
+.deck.open .dcards{ opacity:1; transform:translateX(-50%) scale(1); pointer-events:auto; }
+.deck.open .pk{ opacity:0; transform:translateX(-50%) scale(.8); pointer-events:none; }
+.deck.open{ z-index:20; }
+
+.dcards .c{ position:absolute; left:0; right:0; top:0; border-radius:13px; padding:9px 12px 10px; box-sizing:border-box;
+  border:1px solid var(--line); background:var(--surface-2); transition:transform .25s ease, opacity .25s ease;
+  box-shadow:0 3px 12px rgba(38,33,26,.10); }
+.lane.personal .dcards .c{ background:var(--amber-subtle); border-color:color-mix(in srgb,var(--amber) 34%,transparent);
+  box-shadow:0 3px 12px rgba(176,125,43,.16); }
+.dcards .c .cy{ font-size:11px; font-weight:600; color:var(--ink-3); margin-bottom:2px; }
+.lane.personal .dcards .c .cy{ color:var(--amber-d); }
+.dcards .c .ct{ font-family:var(--font-serif); font-size:15px; line-height:1.25; color:var(--ink); }
+.dcards .c .ct b{ font-weight:700; }
+.dcards .c .cph{ margin-top:7px; border-radius:8px; overflow:hidden; border:1px solid var(--line); }
+.dcards .c .cph img{ width:100%; height:auto; max-height:118px; object-fit:cover; display:block; }
+.dcards .c .cav{ display:flex; justify-content:center; margin:8px 0 2px; }
+.dcards .c .cav img{ width:52px; height:52px; border-radius:50%; object-fit:cover; display:block;
+  border:2px solid var(--surface); box-shadow:0 1px 4px rgba(38,33,26,.22); }
+/* stacked (behind) cards of a cluster — blank paper edges, sized to the top card so no stray text peeks out */
+.dcards .c.b1{ transform:translate(6px,6px); z-index:1; opacity:.85; }
+.dcards .c.b2{ transform:translate(12px,12px); z-index:0; opacity:.7; }
+.dcards .c.b1 > *, .dcards .c.b2 > *{ visibility:hidden; }
+.dcards .c.top{ z-index:2; }
+.deck.multi .dcards{ cursor:pointer; }
+.deck.multi.open:hover .c.b1{ transform:translate(12px,8px) rotate(2deg); }
+.deck.multi.open:hover .c.b2{ transform:translate(24px,16px) rotate(4deg); }
+.dcards .count{ position:absolute; top:6px; right:6px; z-index:3; background:var(--ink); color:var(--surface);
+  font-size:10.5px; font-weight:600; padding:2px 8px; border-radius:9999px; pointer-events:none; }
+</style>
+</head>
+<body>
+
+<section class="frame" data-screen-label="Arc timeline — moving years + event lanes">
+  <h2>Life story — moving arc &amp; event lanes</h2>
+  <p class="sub">Drag the arc or the lanes — years slide along the curve and the moments travel with them, entering from the right</p>
+
+  <div class="panel">
+    <div class="p-chip">Daughter 5</div>
+    <div class="arc" id="arc">
+      <svg viewBox="0 0 460 104" preserveAspectRatio="none">
+        <path d="M26 84 Q230 -28 434 84" fill="none" stroke="var(--line-2)" stroke-width="1.5"></path>
+      </svg>
+      <div class="apex" id="apex"><span class="dot"></span><span class="yr" id="apexYr">1977</span></div>
+      <div class="arc-hint">drag to move through time</div>
+    </div>
+    <div class="lanes" id="lanes">
+      <div class="lane personal" id="laneP1"><span class="lane-axis"></span></div>
+      <div class="lane personal row2" id="laneP2"><span class="lane-axis"></span></div>
+      <div class="lane family" id="laneFamily"><span class="lane-axis"></span></div>
+    </div>
+  </div>
+
+  <ul class="notes">
+    <li><b>Moving ruler:</b> year dots are pinned to their years and slide along the arc — the amber apex is "now"</li>
+    <li><b>Pills → cards:</b> far moments compress into small year pills; when one reaches "now" it unfolds into the full card</li>
+    <li><b>Three rows:</b> your own moments ride the two inner amber rows, family events the outer one — no labels needed, the tint says it</li>
+    <li><b>Photos</b> keep their true ratio; "is born" moments show the person's round avatar</li>
+    <li><b>Clusters:</b> nearby events share one pill ("1975 · 2"); unfolded, they stack as a deck — hover fans it, click flips to the next card</li>
+    <li><b>Tap a pill</b> to glide straight to that moment</li>
+  </ul>
+</section>
+
+<script>
+/* ---------- data ---------- */
+const EVENTS=[
+  { y:1936, lane:'family',   t:'Grandfather <b>Yosef</b> opens his watch shop', photo:'photos/ph-yosef-e2.webp' },
+  { y:1948, lane:'personal', t:'You are born' },
+  { y:1955, lane:'personal', t:'First school photo', photo:'photos/ph-miriam-e1.webp' },
+  { y:1961, lane:'family',   t:'The family moves to Haifa' },
+  { y:1962, lane:'family',   t:'Aunt <b>Dvora</b> arrives from Poland' },
+  { y:1968, lane:'family',   t:'Father <b>David</b> dies' },
+  { y:1971, lane:'personal', t:'You marry <b>Aharon</b>' },
+  { y:1975, lane:'personal', t:'Daughter <b>Tal</b> is born', avatar:'photos/ph-tal-e1.webp' },
+  { y:1976, lane:'personal', t:'You move to the new apartment' },
+  { y:1979, lane:'personal', t:'Son <b>Dan</b> is born', avatar:'photos/ph-daniel-e3.webp' },
+  { y:1983, lane:'family',   t:'The shop becomes “Yosef &amp; Sons”', photo:'photos/ph-yosef-e7.webp' },
+  { y:1990, lane:'personal', t:'Silver anniversary', photo:'photos/ph-david-e10.webp' },
+  { y:1994, lane:'family',   t:'Grandmother <b>Miriam</b> dies' },
+  { y:2003, lane:'personal', t:'First grandchild, <b>Noa</b>', avatar:'photos/ph-noa-e1.webp' },
+  { y:2011, lane:'family',   t:'The family reunion in Haifa', photo:'photos/ph-sarah-e8.webp' },
+];
+const MINY=1930, MAXY=2020;
+const WIN=16;                 // years visible across the panel
+const PW=460;                 // panel width
+const PPY=PW/WIN;             // px per year
+
+/* ---------- cluster events (same lane, ≤2yr apart) ---------- */
+function clusterize(list){
+  const out=[]; let cur=null;
+  list.sort((a,b)=>a.y-b.y).forEach(e=>{
+    if(cur && e.y-cur.items[cur.items.length-1].y<=2){ cur.items.push(e); }
+    else { cur={ items:[e] }; out.push(cur); }
+  });
+  out.forEach(c=>{ c.y=c.items.reduce((s,e)=>s+e.y,0)/c.items.length; c.active=0; });
+  return out;
+}
+const P_ALL=clusterize(EVENTS.filter(e=>e.lane==='personal'));
+const P_ROW1=P_ALL.filter((c,i)=>i%2===0), P_ROW2=P_ALL.filter((c,i)=>i%2===1);
+const F_CLUSTERS=clusterize(EVENTS.filter(e=>e.lane==='family'));
+
+/* ---------- build deck DOM ---------- */
+function buildDecks(clusters, laneEl){
+  clusters.forEach(c=>{
+    const d=document.createElement('div');
+    d.className='deck'+(c.items.length>1?' multi':'');
+    // compact pill
+    const pk=document.createElement('div'); pk.className='pk';
+    const y0=c.items[0].y, y1=c.items[c.items.length-1].y;
+    pk.innerHTML=(c.items.length>1?y0+'–'+String(y1).slice(2):y0)+(c.items.length>1?' <span class="n">· '+c.items.length+'</span>':'');
+    pk.addEventListener('click',(e)=>{ e.stopPropagation(); glideTo(c.y); });
+    d.appendChild(pk);
+    // full cards
+    const dc=document.createElement('div'); dc.className='dcards';
+    c.items.forEach(ev=>{
+      const card=document.createElement('div'); card.className='c';
+      card.innerHTML='<div class="cy">'+ev.y+'</div><div class="ct">'+ev.t+'.</div>'
+        +(ev.avatar?'<div class="cav"><img src="'+ev.avatar+'" alt="" draggable="false"></div>':'')
+        +(ev.photo?'<div class="cph"><img src="'+ev.photo+'" alt="" draggable="false"></div>':'');
+      dc.appendChild(card);
+    });
+    if(c.items.length>1){
+      const n=document.createElement('div'); n.className='count'; n.textContent=c.items.length+' ›';
+      dc.appendChild(n);
+      dc.addEventListener('click',(e)=>{ e.stopPropagation(); c.active=(c.active+1)%c.items.length; layoutDeck(c); });
+    }
+    d.appendChild(dc);
+    laneEl.appendChild(d);
+    c.el=d;
+    // true-ratio photos change card height once loaded — re-measure the deck
+    dc.querySelectorAll('img').forEach(im=>im.addEventListener('load',()=>layoutDeck(c)));
+  });
+}
+function layoutDeck(c){
+  const cards=[...c.el.querySelectorAll('.dcards .c')];
+  let top=null;
+  cards.forEach((card,i)=>{
+    const off=(i-c.active+c.items.length)%c.items.length; // 0 = active
+    card.className='c '+(off===0?'top':off===1?'b1':'b2');
+    if(off===0) top=card;
+  });
+  // behind cards clone the top card's footprint SYNCHRONOUSLY — offsetHeight forces layout
+  if(!top) return;
+  top.style.height='auto';
+  const h=top.offsetHeight;
+  cards.forEach(card=>{ if(card!==top) card.style.height=h+'px'; card.style.overflow='hidden'; });
+}
+const laneP1=document.getElementById('laneP1'), laneP2=document.getElementById('laneP2'), laneF=document.getElementById('laneFamily');
+buildDecks(P_ROW1,laneP1); buildDecks(P_ROW2,laneP2); buildDecks(F_CLUSTERS,laneF);
+const ALL_CLUSTERS=[...P_ROW1,...P_ROW2,...F_CLUSTERS];
+ALL_CLUSTERS.forEach(layoutDeck);
+// re-measure once webfonts settle (heights depend on Newsreader metrics)
+window.addEventListener('load',()=>ALL_CLUSTERS.forEach(layoutDeck));
+
+/* ---------- arc geometry ---------- */
+const P0={x:26,y:84}, PC={x:230,y:-28}, P2={x:434,y:84};
+const xAt=t=>(1-t)*(1-t)*P0.x+2*(1-t)*t*PC.x+t*t*P2.x;
+const yAt=t=>(1-t)*(1-t)*P0.y+2*(1-t)*t*PC.y+t*t*P2.y;
+const arc=document.getElementById('arc');
+const apex=document.getElementById('apex'), apexYr=document.getElementById('apexYr');
+apex.style.left=xAt(.5)+'px'; apex.style.top=(yAt(.5)-6)+'px';
+
+/* sliding ticks — one per 4-year mark, pinned to its year */
+const ticks=[];
+for(let y=Math.ceil(MINY/4)*4;y<=MAXY;y+=4){
+  const tk=document.createElement('div'); tk.className='tick';
+  tk.innerHTML='<span class="dot"></span><span class="yr">'+y+'</span>';
+  arc.appendChild(tk); ticks.push({y,el:tk});
+}
+
+/* ---------- state + render ---------- */
+let year=1977;
+function render(){
+  apexYr.textContent=Math.round(year);
+  ticks.forEach(tk=>{
+    const t=.5+(tk.y-year)/WIN;
+    if(t<.03||t>.97||Math.abs(tk.y-year)<2.4){ tk.el.style.display='none'; return; }
+    tk.el.style.display='';
+    tk.el.style.left=xAt(t)+'px';
+    tk.el.style.top=yAt(t)+'px';
+    const edge=Math.min(t,1-t);
+    tk.el.style.opacity=Math.max(0,Math.min(1,(edge-.03)/.12));
+  });
+  const place=(clusters)=>{
+    // only the deck nearest to "now" (within reach) unfolds — the rest stay pills
+    let best=null,bd=2.4;
+    clusters.forEach(c=>{ const d=Math.abs(c.y-year); if(d<bd){ bd=d; best=c; } });
+    clusters.forEach(c=>{
+      const dy=c.y-year;
+      if(Math.abs(dy)>WIN/2+2){ c.el.style.display='none'; return; }
+      c.el.style.display='';
+      c.el.style.left=(PW/2+dy*PPY)+'px';
+      const fade=Math.max(0,Math.min(1,(7.9-Math.abs(dy))/1.2)); // solid until ≈dy 6.7, gone before the edge clips
+      c.el.style.opacity=fade;
+      c.el.classList.toggle('open',c===best);
+    });
+  };
+  place(P_ROW1); place(P_ROW2); place(F_CLUSTERS);
+}
+render();
+
+/* ---------- drag to scrub (arc + lanes) ---------- */
+function scrubbable(el){
+  let drag=null;
+  el.addEventListener('pointerdown',e=>{
+    if(e.target.closest('.deck')) return;          // pills & cards handle their own clicks
+    drag={x:e.clientX,acc:year}; el.setPointerCapture(e.pointerId);
+  });
+  el.addEventListener('pointermove',e=>{
+    if(!drag) return;
+    const dx=e.clientX-drag.x; drag.x=e.clientX;
+    drag.acc=Math.min(MAXY,Math.max(MINY,drag.acc-dx/PPY));
+    year=drag.acc; render();
+  });
+  const up=()=>{ drag=null; };
+  el.addEventListener('pointerup',up); el.addEventListener('pointercancel',up);
+}
+scrubbable(arc);
+scrubbable(document.getElementById('lanes'));
+
+/* tap a pill → glide to that moment */
+let glideRaf=0;
+function glideTo(target){
+  cancelAnimationFrame(glideRaf);
+  const from=year, dur=550, t0=performance.now();
+  const step=(ts)=>{
+    const u=Math.min(1,(ts-t0)/dur);
+    const e=.5-.5*Math.cos(u*Math.PI);
+    year=from+(target-from)*e; render();
+    if(u<1) glideRaf=requestAnimationFrame(step);
+  };
+  glideRaf=requestAnimationFrame(step);
+}
+</script>
+</body>
+</html>

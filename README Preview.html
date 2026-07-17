@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>README — My Family Story</title>
+<script src="https://unpkg.com/marked@12.0.2/marked.min.js"></script>
+<style>
+:root{--paper:#ffffff;--ink:rgb(55,53,47);--ink-2:rgba(55,53,47,.65);--ink-3:rgba(55,53,47,.45);--line:rgba(55,53,47,.09);--code-bg:#f7f6f3;--accent:#B07D2B;--sel:rgba(35,131,226,.14)}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font:400 16px/1.65 ui-sans-serif,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+::selection{background:var(--sel)}
+.topnav{position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:10px;padding:10px 20px;background:rgba(255,255,255,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.crumb{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink-2);min-width:0}
+.crumb .doc{color:var(--ink);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.crumb .sep{color:var(--ink-3)}
+.spacer{flex:1}
+.langs{display:flex;gap:2px;background:var(--code-bg);border-radius:7px;padding:2px}
+.langs button{border:0;background:transparent;font:500 13px/1 inherit;font-family:inherit;color:var(--ink-2);padding:6px 12px;border-radius:5px;cursor:pointer}
+.langs button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08),0 0 0 1px var(--line)}
+.page{max-width:980px;margin:0 auto;padding:36px 24px 140px}
+.md{padding-top:6px}
+.md h1{font-size:38px;line-height:1.2;font-weight:700;letter-spacing:-.01em;margin:14px 0 4px}
+.md h2{font-size:26px;font-weight:600;letter-spacing:-.005em;margin:2em 0 .45em;padding-top:.2em}
+.md h3{font-size:20px;font-weight:600;margin:1.6em 0 .4em}
+.md p{margin:.55em 0}
+.md h1+p>em, .md h1+blockquote{color:var(--ink-2)}
+.md a{color:inherit;text-decoration:underline;text-decoration-color:rgba(55,53,47,.35);text-underline-offset:3px;transition:background .1s}
+.md a:hover{background:var(--code-bg);text-decoration-color:var(--ink-2)}
+.md strong{font-weight:600}
+.md em{font-style:italic}
+.md hr{border:0;border-top:1px solid var(--line);margin:2.2em 0}
+.md ul,.md ol{padding-inline-start:1.5em;margin:.4em 0}
+.md li{margin:.28em 0}
+.md li::marker{color:var(--ink-3)}
+.md blockquote{margin:.8em 0;padding:4px 2px 4px 14px;border-inline-start:3px solid var(--ink);font-size:16px}
+.md blockquote p{margin:.2em 0}
+.md code{background:var(--code-bg);color:#c74e39;border-radius:4px;padding:.15em .4em;font:85% ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.md pre{background:var(--code-bg);border-radius:8px;padding:18px 20px;overflow-x:auto;margin:1em 0;border:1px solid var(--line)}
+.md pre code{background:none;color:var(--ink);padding:0;font-size:13.5px;line-height:1.6}
+.md img{max-width:100%;border-radius:8px;border:1px solid var(--line);box-shadow:0 4px 18px rgba(55,53,47,.08);margin:10px 0 2px;display:block}
+.md img+em, .md p:has(img)+p>em{font-size:13px;color:var(--ink-3)}
+.md table{border-collapse:collapse;width:100%;margin:1em 0;font-size:14.5px}
+.md th{font-weight:500;color:var(--ink-2);text-align:start;background:var(--code-bg)}
+.md th,.md td{border:1px solid var(--line);padding:8px 12px}
+.md h2 .anchor,.md h3 .anchor{opacity:0;margin-inline-start:8px;font-size:.7em;text-decoration:none;color:var(--ink-3)}
+.md h2:hover .anchor,.md h3:hover .anchor{opacity:1}
+[dir="rtl"] .md{font-size:16.5px}
+.loading{color:var(--ink-3);padding:80px 0;text-align:center;font-size:14px}
+@media (max-width:760px){.md h1{font-size:30px}.page{padding-top:24px}}
+</style>
+</head>
+<body>
+<div class="topnav">
+<div class="crumb"><span>🌳</span><span class="doc" id="crumbTitle">README</span><span class="sep">/</span><span>My Family Story</span></div>
+<div class="spacer"></div>
+<div class="langs"><button id="btnEn" class="on">English</button><button id="btnHe">עברית</button></div>
+</div>
+<div class="page">
+<div class="md" id="md"><div class="loading">Loading…</div></div>
+</div>
+<script>
+const md = document.getElementById('md');
+const slug = s => s.toLowerCase().trim().replace(/<[^>]+>/g,'').replace(/&[a-z]+;|&#\d+;/g,'').replace(/[^\w\u0590-\u05FF -]/g,'').replace(/ /g,'-');
+async function load(lang){
+  document.getElementById('btnEn').classList.toggle('on', lang==='en');
+  document.getElementById('btnHe').classList.toggle('on', lang==='he');
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang==='he' ? 'rtl' : 'ltr';
+  document.getElementById('crumbTitle').textContent = lang==='he' ? 'README.he' : 'README';
+  const file = lang==='he' ? 'README.he.md' : 'README.md';
+  try{
+    const txt = await (await fetch(file)).text();
+    // strip the first H1 emoji duplication? keep as-is; convert
+    const renderer = new marked.Renderer();
+    renderer.heading = function(text, level){
+      const id = slug(text);
+      const a = level===2||level===3 ? '<a class="anchor" href="#'+id+'">#</a>' : '';
+      return '<h'+level+' id="'+id+'">'+text+a+'</h'+level+'>';
+    };
+    renderer.link = function(href, title, text){
+      if(href && href.endsWith('.md')){
+        const l = href.includes('.he.') ? 'he' : 'en';
+        return '<a href="#" onclick="load(\''+l+'\');return false;">'+text+'</a>';
+      }
+      const ext = /^https?:/.test(href) ? ' target="_blank" rel="noopener"' : '';
+      return '<a href="'+href+'"'+(title?' title="'+title+'"':'')+ext+'>'+text+'</a>';
+    };
+    md.innerHTML = marked.parse(txt, { renderer, mangle:false, headerIds:false });
+    // in-page TOC links: smooth-ish jump without scrollIntoView
+    md.querySelectorAll('a[href^="#"]').forEach(a=>{
+      a.addEventListener('click', e=>{
+        const t = document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1)));
+        if(t){ e.preventDefault(); const y = t.getBoundingClientRect().top + window.pageYOffset - 64; window.scrollTo({top:y, behavior:'smooth'}); }
+      });
+    });
+    window.scrollTo(0,0);
+  }catch(err){
+    md.innerHTML = '<div class="loading">Could not load '+file+'</div>';
+  }
+  try{ localStorage.setItem('readme-lang', lang); }catch(e){}
+}
+document.getElementById('btnEn').onclick = ()=>load('en');
+document.getElementById('btnHe').onclick = ()=>load('he');
+let start = 'en';
+try{ start = localStorage.getItem('readme-lang') || 'en'; }catch(e){}
+load(start);
+</script>
+</body>
+</html>

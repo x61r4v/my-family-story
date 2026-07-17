@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Family Tree</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Frank+Ruhl+Libre:wght@400;500;700&family=Noto+Sans+Hebrew:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+:root{
+  /* ---- warm paper neutrals ---- */
+  --paper:#F4EFE4;          /* app background */
+  --canvas:#EBE4D4;         /* tree canvas */
+  --canvas-dot:#D8CEB8;     /* dot grid */
+  --surface:#FFFDF7;        /* cards / nodes */
+  --surface-2:#FAF5EA;
+  --surface-3:#F2EADb;
+  --ink:#26211A;            /* warm near-black */
+  --ink-2:#6B6256;          /* secondary */
+  --ink-3:#9A9082;          /* tertiary */
+  --line:#E4DBC8;
+  --line-2:#D6CBB3;
+  --photo-stroke:rgba(62,44,24,.20); /* inner stroke cast over photos */
+  --line-3:#C4B89C;         /* blood connector */
+  /* ---- deceased card ---- */
+  --dead-card:#EFE9DB;      /* brighter cream-grey card */
+  --dead-pill:#E2DAC6;      /* age pill on a dead card */
+  /* ---- atlassian blue (interaction) ---- */
+  --blue:#0C66E4;
+  --blue-h:#0055CC;
+  --blue-subtle:#E9F2FF;
+  --blue-border:#9FC1F5;
+  /* ---- heritage amber (accent) ---- */
+  --amber:#B07D2B;
+  --amber-d:#8A6017;
+  --amber-subtle:#F6ECD6;
+  /* ---- side-link plum ---- */
+  --plum:#6E5DC6;
+  --plum-subtle:#EDE9FA;
+  /* ---- life-stage colours ---- */
+  --stage-child:#FF2D87;    /* childhood 0–11 · bright pink */
+  --stage-youth:#E45C9C;    /* youth 12–18 · pink */
+  --stage-adult:#0C66E4;    /* adulthood 19–59 · blue */
+  --stage-later:#77E9F1;    /* later years 60+ · bright cyan */
+  /* ---- sex tints (muted) ---- */
+  --sex-m:#5E83B3;
+  --sex-f:#B5756A;
+  /* ---- status ---- */
+  --living:#2F8A5B;
+  --shadow-node:0 1px 2px rgba(38,33,26,.10), 0 2px 6px rgba(38,33,26,.06);
+  --shadow-pop:0 8px 28px rgba(38,33,26,.16), 0 2px 8px rgba(38,33,26,.08);
+  --radius:12px;
+  --font-ui:'Inter',system-ui,-apple-system,sans-serif;
+  --font-body:'Roboto',system-ui,sans-serif;
+  --font-serif:'Newsreader',Georgia,serif;
+  --font-he:'Frank Ruhl Libre','Noto Sans Hebrew',serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;height:100%;}
+body{
+  font-family:var(--font-body); color:var(--ink); background:var(--paper);
+  -webkit-font-smoothing:antialiased; overflow:hidden;
+}
+#root{height:100vh;}
+[dir="rtl"]{text-align:right;}
+.he{font-family:var(--font-he);}
+button{font-family:inherit;}
+::selection{background:rgba(12,102,228,.18);}
+
+/* scrollbars */
+*::-webkit-scrollbar{width:10px;height:10px;}
+*::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:8px;border:2px solid transparent;background-clip:content-box;}
+*::-webkit-scrollbar-track{background:transparent;}
+
+/* tweaks panel container override to match warm theme is fine as-is */
+</style>
+<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="records.css" />
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script src="tree-seed.js"></script>
+<script src="image-slot.js"></script>
+<script src="family-data.js"></script>
+<script src="relationships.js"></script>
+<script src="world-events.js"></script>
+<script src="tree-store.js"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="publish.jsx"></script>
+<script type="text/babel" src="records-room.jsx"></script>
+<script type="text/babel" src="records-desk.jsx"></script>
+<script type="text/babel" src="tree-canvas.jsx"></script>
+<script type="text/babel" src="edit-canvas.jsx"></script>
+<script type="text/babel" src="focus-view.jsx"></script>
+<script type="text/babel" src="story-panel.jsx"></script>
+<script type="text/babel" src="world-band.jsx"></script>
+<script type="text/babel" src="world-room.jsx"></script>
+<script type="text/babel" src="edit-mode.jsx"></script>
+<script type="text/babel" src="app.jsx"></script>
+</body>
+</html>
