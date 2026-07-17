@@ -9,7 +9,7 @@ All notable changes to **My Family Story** (the app itself, not the family data 
 ## v1.1.0 · 2026-07-17
 
 - Editing is now ON by default for everyone - `?edit=0` locks a session into viewer mode (was: hidden until `?edit=1`).
-- The export now ships `uploads/default.jpg` (the default avatar) - it was missing from the zip.
+- The export now ships the default avatar - it was missing from the zip. (Then at `uploads/default.jpg`; moved to `assets/default-avatar.jpg` in v1.1.1.)
 - Removed the design-time Tweaks panel from the shipped app (node style, canvas texture and heritage accent are baked in as defaults).
 
 ## v1.0.0 · 2026-07-17
