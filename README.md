@@ -2,7 +2,7 @@
 
 *A living record of your family - built to be explored together, one year at a time.*
 
-**App version: v1.1.0** · [changelog](CHANGELOG.md)
+**App version: v1.1.1** · [changelog](CHANGELOG.md)
 
 ![The family tree in 1997](readme-assets/hero.webp)
 

@@ -14,7 +14,7 @@
 //   excluded   [key] — photos hidden from the tree, key = `<person>-e<idx>`.
 //
 // v4: removed all generated silhouette placeholders — only real uploaded
-// photos remain; empty slots fall back to the default blur (uploads/default.jpg).
+// photos remain; empty slots fall back to the default blur (assets/default-avatar.jpg).
 window.FT_SEED = {
   seedStamp: 1784211399369,
   baseV: 33,

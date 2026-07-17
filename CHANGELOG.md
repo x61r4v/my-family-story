@@ -2,6 +2,10 @@
 
 All notable changes to **My Family Story** (the app itself, not the family data - the data has its own version counter, the Save chip's v-number).
 
+## v1.1.1 · 2026-07-17
+
+- Moved the default avatar to assets/default-avatar.jpg (was uploads/default.jpg); the uploads/ folder is gone from the release.
+
 ## v1.1.0 · 2026-07-17
 
 - Editing is now ON by default for everyone - `?edit=0` locks a session into viewer mode (was: hidden until `?edit=1`).

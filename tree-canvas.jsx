@@ -229,7 +229,7 @@ window.PhotoMenuSlot = function PhotoMenuSlot({ personId, idx, mode = 'story', s
         // the slot as a centred square of the frame's longer side; .av-frame clips.
         ? <div className="av-frame ms-portrait" style={{ ...(style || {}), borderRadius: (parseFloat(radius) || 13) + 'px' }}>
             <image-slot ref={setDisp} key="disp" id={displayId} shape="rect" fit="cover" no-reframe=""
-              placeholder={placeholder} src={photoUrl || 'uploads/default.jpg'}></image-slot>
+              placeholder={placeholder} src={photoUrl || 'assets/default-avatar.jpg'}></image-slot>
           </div>
         : <image-slot ref={setDisp} key="disp" id={displayId} shape={shape} radius={radius} fit="cover"
             style={style} placeholder={placeholder}></image-slot>}
@@ -372,7 +372,7 @@ function TreeNode({ person, lang, style, year, selected, dimmed, onSelect, onOpe
                 width: S + 'px', height: S + 'px' }, placeholder: initials(person) };
             // auto-picked face-framed avatar when a photo exists; otherwise the
             // shared default/empty-state image (still droppable to replace).
-            props.src = av.u || 'uploads/default.jpg';
+            props.src = av.u || 'assets/default-avatar.jpg';
             return React.createElement('image-slot', props);
           })()}
         </div>
