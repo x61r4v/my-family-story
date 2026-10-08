@@ -1,7 +1,7 @@
 /* app.jsx — shell: top bar, timeline scrubber, selection drawer, tweaks */
 
 const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "nodeStyle": "photo",
+  "nodeStyle": "tree",
   "canvasTexture": "dots",
   "heritage": "#B07D2B",
   "branchHighlight": true
@@ -611,7 +611,7 @@ class RrBoundary extends React.Component {
 function App() {
   const R = window.REL;
   const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
-  const [year, setYear] = useState(() => 5534);
+  const [year, setYear] = useState(() => { try { const q = parseInt(new URLSearchParams(location.search).get("year"), 10); return q > 5400 && q < 5900 ? q : 5534; } catch (e) { return 5534; } });
   // structural edits (edit mode) change the people set — re-run layout when they land
   const [treeRev, setTreeRev] = useState(0);
   useEffect(() => { const h = () => setTreeRev((n) => n + 1); window.addEventListener('ft-tree-changed', h); return () => window.removeEventListener('ft-tree-changed', h); }, []);
