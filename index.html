@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Family Tree</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto:wght@400;500;700&family=Newsreader:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Frank+Ruhl+Libre:wght@400;500;700&family=Noto+Sans+Hebrew:wght@400;500;700&display=swap" rel="stylesheet" />
+<style>
+:root{
+  /* ---- warm paper neutrals ---- */
+  --paper:#F4EFE4;          /* app background */
+  --canvas:#EBE4D4;         /* tree canvas */
+  --canvas-dot:#D8CEB8;     /* dot grid */
+  --surface:#FFFDF7;        /* cards / nodes */
+  --surface-2:#FAF5EA;
+  --surface-3:#F2EADb;
+  --ink:#26211A;            /* warm near-black */
+  --ink-2:#6B6256;          /* secondary */
+  --ink-3:#9A9082;          /* tertiary */
+  --line:#E4DBC8;
+  --line-2:#D6CBB3;
+  --photo-stroke:rgba(62,44,24,.20); /* inner stroke cast over photos */
+  --line-3:#C4B89C;         /* blood connector */
+  /* ---- deceased card ---- */
+  --dead-card:#EFE9DB;      /* brighter cream-grey card */
+  --dead-pill:#E2DAC6;      /* age pill on a dead card */
+  /* ---- atlassian blue (interaction) ---- */
+  --blue:#0C66E4;
+  --blue-h:#0055CC;
+  --blue-subtle:#E9F2FF;
+  --blue-border:#9FC1F5;
+  /* ---- heritage amber (accent) ---- */
+  --amber:#B07D2B;
+  --amber-d:#8A6017;
+  --amber-subtle:#F6ECD6;
+  /* ---- side-link plum ---- */
+  --plum:#6E5DC6;
+  --plum-subtle:#EDE9FA;
+  /* ---- life-stage colours ---- */
+  --stage-child:#FF2D87;    /* childhood 0–11 · bright pink */
+  --stage-youth:#E45C9C;    /* youth 12–18 · pink */
+  --stage-adult:#0C66E4;    /* adulthood 19–59 · blue */
+  --stage-later:#77E9F1;    /* later years 60+ · bright cyan */
+  /* ---- sex tints (muted) ---- */
+  --sex-m:#5E83B3;
+  --sex-f:#B5756A;
+  /* ---- status ---- */
+  --living:#2F8A5B;
+  --shadow-node:0 1px 2px rgba(38,33,26,.10), 0 2px 6px rgba(38,33,26,.06);
+  --shadow-pop:0 8px 28px rgba(38,33,26,.16), 0 2px 8px rgba(38,33,26,.08);
+  --radius:12px;
+  --font-ui:'Inter',system-ui,-apple-system,sans-serif;
+  --font-body:'Roboto',system-ui,sans-serif;
+  --font-serif:'Newsreader',Georgia,serif;
+  --font-he:'Frank Ruhl Libre','Noto Sans Hebrew',serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;height:100%;}
+body{
+  font-family:var(--font-body); color:var(--ink); background:var(--paper);
+  -webkit-font-smoothing:antialiased; overflow:hidden;
+}
+#root{height:100vh;}
+[dir="rtl"]{text-align:right;}
+.he{font-family:var(--font-he);}
+button{font-family:inherit;}
+::selection{background:rgba(12,102,228,.18);}
+
+/* scrollbars */
+*::-webkit-scrollbar{width:10px;height:10px;}
+*::-webkit-scrollbar-thumb{background:var(--line-2);border-radius:8px;border:2px solid transparent;background-clip:content-box;}
+*::-webkit-scrollbar-track{background:transparent;}
+
+/* tweaks panel container override to match warm theme is fine as-is */
+</style>
+<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="records.css" />
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script>/* Hosting adaptation: browser-only storage. Original app: Aviran Revach, CC BY-NC 4.0. */
+(() => {
+  const files = ['.ft-doc.state.json', '.image-slots.state.json'];
+  const nativeFetch = window.fetch.bind(window);
+  let failed = false; const live = {};
+  const status = (text) => { window.FTStorageStatus = text; window.dispatchEvent(new Event('ft-storage-status')); };
+  const db = new Promise((resolve, reject) => {
+    const r = indexedDB.open('my-family-story-local-v1', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('files');
+    r.onsuccess = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+  });
+  const read = async (file) => new Promise(async (resolve, reject) => {
+    try { const d = await db; const r = d.transaction('files').objectStore('files').get(file); r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error); } catch(e) { reject(e); }
+  });
+  const write = async (file, value) => {
+    if (!files.includes(file)) throw new Error('Unsupported file');
+    JSON.parse(value); live[file] = value;
+    try {
+      const d = await db;
+      await new Promise((resolve, reject) => { const t = d.transaction('files', 'readwrite'); t.objectStore('files').put(value, file); t.oncomplete = resolve; t.onerror = () => reject(t.error); t.onabort = () => reject(t.error); });
+      failed = false; status('נשמר בדפדפן');
+    } catch(e) { failed = true; status('השמירה נכשלה - יש להוריד גיבוי כעת'); throw e; }
+  };
+  window.omelette = { writeFile: write };
+  window.fetch = async (input, options) => {
+    const u = new URL(typeof input === 'string' ? input : input.url, location.href);
+    const file = decodeURIComponent(u.pathname.split('/').pop());
+    if (u.origin === location.origin && files.includes(file)) {
+      try { const saved = await read(file); if (saved !== undefined) return new Response(saved, {headers:{'Content-Type':'application/json'}}); }
+      catch(e) { failed = true; status('אין גישה לשמירה בדפדפן - הורידו גיבוי'); }
+    }
+    return nativeFetch(input, options);
+  };
+  const snapshot = async () => {
+    const result = {};
+    for (const file of files) result[file] = JSON.parse(live[file] ?? await read(file) ?? await (await nativeFetch(file)).text());
+    // Include the current live document if browser storage failed or a write is still in flight.
+    if (window.FTStore) result[files[0]] = JSON.parse(JSON.stringify(window.FTStore.doc));
+    return {format:'my-family-story-backup', version:1, created:new Date().toISOString(), files:result};
+  };
+  window.FTBrowserStorage = {
+    failed: () => failed,
+    async download() {
+      try {
+        const backup = await snapshot();
+        const url = URL.createObjectURL(new Blob([JSON.stringify(backup)], {type:'application/json'}));
+        const a = document.createElement('a'); a.href = url; a.download = 'my-family-story-backup-'+new Date().toISOString().slice(0,10)+'.json'; a.click(); setTimeout(()=>URL.revokeObjectURL(url), 1000);
+      } catch(e) { alert('לא ניתן ליצור גיבוי. אל תסגרו את העמוד.'); }
+    },
+    async import(file) {
+      try {
+        const x = JSON.parse(await file.text());
+        if(x.format !== 'my-family-story-backup' || x.version !== 1 || !x.files || Object.keys(x.files).sort().join() !== [...files].sort().join()) throw new Error('Invalid backup');
+        const doc = x.files[files[0]], slots = x.files[files[1]];
+        if(!doc || doc.v !== 1 || !Array.isArray(doc.ops) || !doc.struct || !slots || typeof slots !== 'object' || Array.isArray(slots)) throw new Error('Invalid data');
+        if(!confirm('ייבוא הגיבוי יחליף את העץ המקומי בדפדפן הזה. להמשיך?')) return;
+        const d = await db;
+        await new Promise((resolve,reject)=>{ const t=d.transaction('files','readwrite'); for(const f of files)t.objectStore('files').put(JSON.stringify(x.files[f]),f); t.oncomplete=resolve; t.onerror=()=>reject(t.error); t.onabort=()=>reject(t.error); });
+        location.reload();
+      } catch(e) { alert('הייבוא נכשל. בדקו שזה קובץ גיבוי תקין של האתר.'); }
+    }
+  };
+  status('שמירה מקומית בדפדפן');
+})();
+</script>
+<script src="tree-seed.js"></script>
+<script src="image-slot.js"></script>
+<script src="family-data.js"></script>
+<script src="relationships.js"></script>
+<script src="world-events.js"></script>
+<script src="tree-store.js"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="publish.jsx"></script>
+<script type="text/babel" src="records-room.jsx"></script>
+<script type="text/babel" src="records-desk.jsx"></script>
+<script type="text/babel" src="tree-canvas.jsx"></script>
+<script type="text/babel" src="edit-canvas.jsx"></script>
+<script type="text/babel" src="focus-view.jsx"></script>
+<script type="text/babel" src="story-panel.jsx"></script>
+<script type="text/babel" src="world-band.jsx"></script>
+<script type="text/babel" src="world-room.jsx"></script>
+<script type="text/babel" src="edit-mode.jsx"></script>
+<script type="text/babel">window.SaveChip = function SaveChip({onOpen}) {
+  const [,bump] = React.useReducer(x=>x+1,0);
+  React.useEffect(()=>{const fn=()=>bump();window.addEventListener('ft-storage-status',fn);return()=>window.removeEventListener('ft-storage-status',fn);},[]);
+  return <button className="pub-chip" onClick={onOpen} title="גיבוי ושחזור"><span className="dot"></span><span dir="rtl">{window.FTStorageStatus || 'שמירה מקומית'}</span></button>;
+};
+window.PublishDialog = function PublishDialog({onClose}) {
+  return <div className="ftp-scrim" onClick={onClose}><div style={{background:'#fffdf7',padding:24,borderRadius:16,width:'min(480px,94vw)',fontFamily:'Noto Sans Hebrew, sans-serif',lineHeight:1.65}} dir="rtl" onClick={e=>e.stopPropagation()}>
+    <h2 style={{marginTop:0}}>שמירה וגיבוי</h2>
+    <p>השינויים נשמרים אוטומטית רק בדפדפן ובמכשיר הזה, כולל אנשים, קשרים, סיפורים ותמונות.</p>
+    <p>אין סנכרון בין מכשירים או בין בני משפחה. ניקוי נתוני האתר או שימוש בגלישה פרטית עלולים למחוק את העץ. הורידו גיבוי אחרי שינויים חשובים.</p>
+    <p role="status">{window.FTStorageStatus}</p>
+    <div style={{display:'flex',gap:12,flexWrap:'wrap'}}><button className="ftp-copy" onClick={()=>window.FTBrowserStorage.download()}>הורדת גיבוי</button>
+    <label style={{cursor:'pointer',border:'1px solid #ddd',padding:'8px 12px',borderRadius:8}}>ייבוא גיבוי<input aria-label="ייבוא גיבוי" type="file" accept=".json,application/json" style={{display:'block',maxWidth:240}} onChange={e=>{if(e.target.files[0])window.FTBrowserStorage.import(e.target.files[0]);}} /></label></div>
+    <p style={{fontSize:12,color:'#6B6256'}}>דמו עם משפחת אדלר הבדיונית. My Family Story מאת Aviran Revach. התאמת אירוח ושמירה מקומית. רישיון <a href="LICENSE" target="_blank" rel="noopener">CC BY-NC 4.0</a>, לשימוש לא מסחרי.</p>
+    <button className="ftp-copy" onClick={onClose}>סגירה</button>
+  </div></div>;
+};
+</script>
+<script type="text/babel" src="app.jsx"></script>
+</body>
+</html>
