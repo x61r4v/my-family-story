@@ -310,7 +310,7 @@ function TreeNode({ person, lang, style, year, selected, dimmed, onSelect, onOpe
   const subLine = dead ? `aged ${person.death.year - person.birth.year}` : `b. ${person.birth.year}`;
   // living → stage-coloured chip; dead → cream-grey pill with age at death; unborn → plain text.
   const stage = status === 'living' ? R.stageOfAge(age) : null;
-  const ageLabel = person.birth.year == null ? "תאריכים לא ידועים" : (person.id==="tzemach" ? "תקמ״ט / תק״נ" : person.id==="maharash" ? "תקצ״ד / תקצ״ג" : window.heYear(person.birth.year))+(person.death?.year ? "–"+window.heYear(person.death.year):"");
+  const ageLabel = person.birth.year == null ? "לידה לא ידועה" : window.heYear(person.birth.year)+(person.death?.year ? "–"+window.heYear(person.death.year) : " · הסתלקות לא מצוינת");
   const yearsEl = status === 'living' ?
   <span className="age-chip" style={{ '--chip': R.STAGE_COLOR[stage], '--chip-ink': stage === 'later' ? '#0B4A52' : '#fff' }}>{ageLabel}</span> :
   status === 'dead' ?
