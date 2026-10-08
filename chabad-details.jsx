@@ -16,8 +16,8 @@ function ChabadDetails({personId,onClose,onSelect}) {
  {p.birth.year==null&&<p className="unknown-note">אין שנת לידה ודאית לציר. המיקום בעץ הוא משפחתי בלבד ואינו תאריך לידה או גיל.</p>}
  {r.limited&&<p className="unknown-note">אין כאן ערך אישי נפרד. האדם מוזכר ברשימת הילדים בערך המקושר; הפירוט למטה הוא ערך המשפחה ולא ביוגרפיה אישית שלו.</p>}
  <section><h3>המשפחה בעץ</h3><div className="research-relations">{related.map(x=><button key={x.id} className="pub-chip" onClick={()=>onSelect(x.id)}>{x.name.he}</button>)}</div></section>
- {a.facts.length>0&&<section><h3>פרטים מתוך תיבת המידע</h3>{a.facts.map((f,i)=><p key={i}><strong>{f.label}: </strong>{f.value}</p>)}</section>}
- <section><h3>תמונות ומסמכים במקור</h3><p>לא משתמשים בתמונות הישנות. קובץ ללא הרשאת שימוש מפורשת מקושר לחב"דפדיה ולא מוטמע כאן. שערי ספרים ומצבות אינם דיוקנאות.</p>
+ {a.facts.length>0&&<section><h3>פרטים מתוך תיבת המידע</h3>{a.facts.map((f,i)=><p key={i}>{f.label&&<strong>{f.label}: </strong>}{f.value}</p>)}</section>}
+ <section><h3>תמונות ומסמכים במקור</h3>{r.image&&<figure><img src={r.image} alt={r.imageInfo.kind} style={{maxWidth:"100%",width:220,height:"auto"}}/><figcaption>{r.imageInfo.credit} <a href={r.imageInfo.source} target="_blank" rel="noopener">דף הקובץ</a></figcaption></figure>}<p>לא משתמשים בתמונות הישנות. קובץ ללא הרשאת שימוש מפורשת מקושר לחב"דפדיה ולא מוטמע כאן. שערי ספרים ומצבות אינם דיוקנאות.</p>
  {a.images.length===0?<p>לא נמצאה תמונה בערך.</p>:a.images.map((im,i)=><div className="research-image" key={i}><a href={im.file} target="_blank" rel="noopener">{im.caption||'תמונה / מסמך '+(i+1)} ↗</a><small>{im.credit}</small><small>{im.reuse}</small></div>)}</section>
  <section><h3>פירוט הערך</h3><p className="research-label">תוכן הערך מסודר לפי כותרות, כולל משפחה, תולדות חיים והערות. ניסוחים וגרסאות הם של המקור, לא הכרעה בין דעות.</p>
  {a.blocks.map((b,i)=>b.type==='heading'?<h3 key={i}>{b.text}</h3>:<p key={i}>{b.text}</p>)}</section>
