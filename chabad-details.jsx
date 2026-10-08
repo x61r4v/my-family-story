@@ -11,7 +11,7 @@ function ChabadDetails({personId,onClose,onSelect}) {
  <div className="drawer-head"><h2>{p.name.he}</h2><button className="bare" onClick={onClose} aria-label="סגירה">×</button></div>
  <div className="drawer-body" ref={body}>
  <p>{a.title}</p><p className="research-label">מחקר מחדש מתוך חב"דפדיה · נבדק 8.10.2026</p>
- <a className="pub-chip" href={a.url} target="_blank" rel="noopener">הערך המקורי בחב"דפדיה ↗</a>
+ <a className="pub-chip" href={a.url} target="_blank" rel="noopener">הערך המקורי בחב"דפדיה ↗</a>{a.history&&<a className="pub-chip" href={a.history} target="_blank" rel="noopener">מחברי הערך וגרסאות קודמות ↗</a>}
  {r.note&&<p className="unknown-note">{r.note}</p>}
  {p.birth.year==null&&<p className="unknown-note">אין שנת לידה ודאית לציר. המיקום בעץ הוא משפחתי בלבד ואינו תאריך לידה או גיל.</p>}
  {r.limited&&<p className="unknown-note">אין כאן ערך אישי נפרד. האדם מוזכר ברשימת הילדים בערך המקושר; הפירוט למטה הוא ערך המשפחה ולא ביוגרפיה אישית שלו.</p>}
