@@ -263,7 +263,8 @@
   }
 
   // ================= LAYOUT (tidy top-down generational) =================
-  const NODE_W = 172, SPOUSE_GAP = 10, GROUP_GAP = 46, ROW_H = 202;
+  const NODE_W = 124, SPOUSE_GAP = 22, GROUP_GAP = 16, ROW_H = 202;
+  const REBBE_IDS = ['alter','mitteler','tzemach','maharash','rashab','rayatz','rebbe'];
 
   // Determine spouse-in vs lineage anchor.
   // A person is an "anchor" if they have parents OR are a designated founder of the main line.
@@ -330,7 +331,7 @@
     return { groups, ownerOf, outsiderIds: [...outsiderIds] };
   }
 
-  function computeLayout(visibleIds) {
+  function computeLayoutOld(visibleIds) {
     const vis = (visibleIds instanceof Set) ? visibleIds : new Set(F.people.map(p => p.id));
     const { groups, ownerOf, outsiderIds } = buildGroups(vis);
     const groupList = Object.values(groups);
@@ -472,6 +473,103 @@
     return { pos, width, height, minX, maxX, maxY: height, parentLinks, sideLinkGeo, NODE_W, ROW_H, maxGen, outsiderIds };
   }
 
+
+  // ================= TIDY TOP-DOWN LAYOUT (Chabadpedia-style family tree) =================
+  // Couples sit side by side (husband right, wife left - RTL reading order), the eldest child
+  // is on the right, every generation is one row below its tree-parent. A couple where both
+  // sides have parents hangs under the Rebbe-side parents (e.g. the Rebbe under the Rayatz).
+  function computeLayout(visibleIds) {
+    const vis = (visibleIds instanceof Set) ? visibleIds : new Set(F.people.map(p => p.id));
+    const isR = id => REBBE_IDS.indexOf(id) !== -1;
+    const People = F.people.filter(p => vis.has(p.id));
+    const owner = {}; const members = {};
+    People.forEach(p => { owner[p.id] = p.id; members[p.id] = [p.id]; });
+    const Us = F.unions.filter(u => vis.has(u.a) && vis.has(u.b))
+      .sort((x, y) => (isR(y.a) || isR(y.b) ? 1 : 0) - (isR(x.a) || isR(x.b) ? 1 : 0) || ((x.year ?? 1e9) - (y.year ?? 1e9)));
+    Us.forEach(u => {
+      const A = get(u.a), B = get(u.b);
+      let anchor, sp;
+      if (isR(A.id) !== isR(B.id)) { anchor = isR(A.id) ? A : B; sp = anchor === A ? B : A; }
+      else if (!A.parents.length !== !B.parents.length) { anchor = A.parents.length ? A : B; sp = anchor === A ? B : A; }
+      else { anchor = (A.sex === 'm' || B.sex !== 'm') ? A : B; sp = anchor === A ? B : A; }
+      // the spouse must still be a lone group, and the anchor must itself be a group head
+      if (owner[anchor.id] !== anchor.id) { const t = anchor; anchor = sp; sp = t; }
+      if (owner[anchor.id] !== anchor.id || owner[sp.id] !== sp.id || members[sp.id].length > 1) return;
+      owner[sp.id] = anchor.id; members[anchor.id].push(sp.id); delete members[sp.id];
+    });
+    const groups = {};
+    Object.keys(members).forEach(aid => {
+      // logical (RTL) order: anchor, then spouses by union year -> LTR: spouses reversed, anchor last
+      const sps = members[aid].slice(1);
+      groups[aid] = { id: aid, anchor: aid, members: sps.reverse().concat([aid]), kids: [] };
+    });
+    const gl = Object.values(groups);
+    const gw = g => g.members.length * NODE_W + (g.members.length - 1) * SPOUSE_GAP;
+    const birthOf = g => { const b = get(g.anchor).birth.year; return b == null ? 1e9 : b; };
+    const order = {}; F.people.forEach((p, i) => { order[p.id] = i; });
+    // tree parent
+    gl.forEach(g => {
+      const cands = [];
+      const own = get(g.anchor).parents.filter(x => vis.has(x));
+      g.members.forEach(mid => get(mid).parents.forEach(pid => { if (vis.has(pid)) { const o = owner[pid]; if (o !== g.id && cands.indexOf(o) === -1) cands.push(o); } }));
+      // anchor's own parents first
+      own.forEach(pid => { const o = owner[pid]; const i = cands.indexOf(o); if (i > 0) { cands.splice(i, 1); cands.unshift(o); } });
+      const rebbeSide = cands.find(o => groups[o].members.some(isR));
+      g.tp = rebbeSide || cands[0] || null;
+    });
+    // break cycles (defensive)
+    gl.forEach(g => { let x = g, n = 0; while (x && x.tp && n++ < 50) x = groups[x.tp]; if (n >= 50) g.tp = null; });
+    gl.forEach(g => { if (g.tp) groups[g.tp].kids.push(g); });
+    const rows = {}; const rowOf = g => { if (g.row == null) g.row = g.tp ? rowOf(groups[g.tp]) + 1 : 0; return g.row; };
+    gl.forEach(rowOf);
+    // children: eldest on the right => LTR sort by birth descending
+    gl.forEach(g => g.kids.sort((a, b) => (birthOf(b) - birthOf(a)) || (order[b.anchor] - order[a.anchor])));
+    // tidy placement (block subtrees, parent centred above its children)
+    let cursor = 0;
+    function place(g) {
+      if (!g.kids.length) { g.center = cursor + gw(g) / 2; cursor += gw(g) + GROUP_GAP; return; }
+      const start = cursor;
+      g.kids.forEach(place);
+      const c0 = g.kids[0].center, c1 = g.kids[g.kids.length - 1].center;
+      g.center = (c0 + c1) / 2;
+      const need = g.center + gw(g) / 2 + GROUP_GAP;            // keep a wide couple inside its block
+      const left = g.center - gw(g) / 2;
+      if (left < start) { const d = start - left; const sh = (x) => { x.center += d; x.kids.forEach(sh); }; g.kids.forEach(sh); g.center += d; cursor += d; }
+      cursor = Math.max(cursor, g.center + gw(g) / 2 + GROUP_GAP);
+    }
+    gl.filter(g => !g.tp).sort((a, b) => (a.row - b.row) || (birthOf(a) - birthOf(b)) || (order[a.anchor] - order[b.anchor])).forEach(place);
+
+    const pos = {};
+    gl.forEach(g => {
+      const w = gw(g);
+      g.members.forEach((mid, i) => { pos[mid] = { cx: g.center - w / 2 + i * (NODE_W + SPOUSE_GAP) + NODE_W / 2, cy: g.row * ROW_H, gen: g.row }; });
+    });
+    const xs = Object.values(pos).map(p => p.cx);
+    const root = gl.filter(g => !g.tp).sort((a, b) => a.row - b.row)[0];
+    const anchorX = root ? root.center : (Math.min(...xs) + Math.max(...xs)) / 2;
+    Object.values(pos).forEach(p => { p.cx -= anchorX; });
+    const minX = Math.min(...xs) - anchorX, maxX = Math.max(...xs) - anchorX;
+    const width = maxX - minX + NODE_W;
+    const maxGen = Math.max(0, ...Object.values(pos).map(p => p.gen));
+    const height = (maxGen + 1) * ROW_H;
+
+    const parentLinks = [];
+    F.unions.forEach(u => {
+      if (!vis.has(u.a) || !vis.has(u.b)) return;
+      const aPos = pos[u.a], bPos = pos[u.b];
+      if (!aPos || !bPos) return;
+      const kids = childrenOfUnion(u).filter(cid => vis.has(cid) && pos[cid])
+        .map(cid => ({ id: cid, cx: pos[cid].cx, cy: pos[cid].cy, year: get(cid).birth.year }));
+      parentLinks.push({ unionId: u.id, year: u.year, type: u.type,
+        ax: aPos.cx, bx: bPos.cx, y: aPos.cy, jx: (aPos.cx + bPos.cx) / 2, jy: aPos.cy, kids });
+    });
+    const sideLinkGeo = F.sideLinks.filter(s => vis.has(s.from) && vis.has(s.to)).map(s => ({
+      from: s.from, to: s.to, kind: s.kind, detail: s.detail,
+      x1: pos[s.from].cx, y1: pos[s.from].cy, x2: pos[s.to].cx, y2: pos[s.to].cy,
+    }));
+    return { pos, width, height, minX, maxX, maxY: height, parentLinks, sideLinkGeo, NODE_W, ROW_H, maxGen, outsiderIds: [] };
+  }
+
   // ---------- relationship of toId *to* fromId ("toId is the ___ of fromId") ----------
   function relationOf(fromId, toId, lang) {
     if (fromId === toId) return null;
@@ -541,7 +639,7 @@
     setNameMode, getNameMode, setNameYear, usesBirthName, nameChangeOf, bornName,
     unionsOf, partnerInUnion, childrenOfUnion, childrenOf, parentsOf,
     siblings, stepParents, stepChildren, sideLinksOf,
-    ageAt, statusAt, lifeEvents, computeLayout, appearsAt, visibleSet,
+    ageAt, statusAt, lifeEvents, computeLayout, REBBE_IDS, appearsAt, visibleSet,
     stageOfAge, lifeStageSegments, STAGES, STAGE_COLOR,
     relationOf,
     NODE_W, ROW_H,
