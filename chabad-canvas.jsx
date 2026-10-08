@@ -373,7 +373,7 @@ function TreeNode({ person, lang, style, year, selected, dimmed, onSelect, onOpe
             // auto-picked face-framed avatar when a photo exists; otherwise the
             // shared default/empty-state image (still droppable to replace).
             props.src = av.u || person.record?.image || ''; props.placeholder = person.sex==='f'?'רבנית':'רב';
-            return person.record?.image ? <img src={person.record.image} alt={person.record.imageInfo?.kind||person.name.he} style={{width:'100%',height:'100%',objectFit:person.id==='mitteler'||person.id==='maharash'?'contain':'cover'}}/> : <Medallion person={person} size={92} deceased={false}/>;
+            return person.record?.image ? <img onPointerDown={e=>e.stopPropagation()} onClick={click} src={person.record.image} alt={person.record.imageInfo?.kind||person.name.he} style={{width:'100%',height:'100%',objectFit:person.id==='mitteler'||person.id==='maharash'?'contain':'cover'}}/> : <Medallion person={person} size={92} deceased={false}/>;
           })()}
         </div>
         <div className="tn-name por"><NameText person={person} lang={lang} /></div>
