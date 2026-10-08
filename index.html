@@ -77,7 +77,14 @@ button{font-family:inherit;}
 </style>
 <link rel="stylesheet" href="styles.css" />
 <link rel="stylesheet" href="records.css" />
-</head>
+<style>
+@media(max-width:600px){
+.topbar{top:10px;left:8px;right:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.brand{padding:0;flex-direction:row;gap:8px;align-items:center;max-width:100%}
+.brand-logo{width:42px}.app-title{font-size:21px;white-space:nowrap}.app-sub{display:none}.brand::before{display:none}
+.top-spacer{display:none}.top-controls{width:100%;justify-content:flex-end;gap:6px;flex-wrap:wrap}.top-controls .pub-chip{max-width:165px}
+}
+</style></head>
 <body>
 <div id="root"></div>
 
