@@ -381,6 +381,15 @@ function TreeNode({ person, lang, style, year, selected, dimmed, onSelect, onOpe
       </div>);
 
   }
+  if (style === 'tree') {
+    const isRebbe = (R.REBBE_IDS || []).indexOf(person.id) !== -1;
+    return (
+      <div className={cls('tnode tnode-tree') + (isRebbe ? ' rebbe' : '') + (person.sex === 'f' ? ' fem' : '')} onClick={click} style={sty}>
+        {relEl}
+        <div className="tn-name"><NameText person={person} lang={lang} /></div>
+        <div className="tn-years-row">{person.birth.year == null ? 'לידה לא ידועה' : window.heYear(person.birth.year) + (person.death?.year ? '–' + window.heYear(person.death.year) : '')}</div>
+      </div>);
+  }
   if (style === 'minimal') {
     return (
       <div className={cls('tnode tnode-min')} onClick={click} style={sty}>
@@ -420,8 +429,8 @@ function TreeNode({ person, lang, style, year, selected, dimmed, onSelect, onOpe
 
 }
 
-const NODE_H = { cards: 78, portraits: 152, minimal: 52, photo: 188 };
-const ROWGAP_FOR = (style) => style === 'minimal' ? 60 : style === 'photo' ? 96 : 86;
+const NODE_H = { cards: 78, portraits: 152, minimal: 52, photo: 188, tree: 56 };
+const ROWGAP_FOR = (style) => style === 'tree' ? 44 : style === 'minimal' ? 60 : style === 'photo' ? 96 : 86;
 
 function TreeCanvas({ layout, lang, style, year, showSideLinks, focusBranch, familyFocus, selectedId, onSelect, onOpenFocus, lifeEffects, editMode }) {
   const R = window.REL;
@@ -518,10 +527,10 @@ function TreeCanvas({ layout, lang, style, year, showSideLinks, focusBranch, fam
     R.F.people.forEach((p) => {nodes[p.id] = { x: 0, y: 0, vx: 0, vy: 0, ax: 0, ay: 0, s: 0.01, sv: 0, tx: 0, ty: 0, ts: 0, init: false, dim: 1 };});
     sim.current = { nodes, edges: [], conns: [], view: { scale: 1, tx: 0, ty: 0, vs: 0, vtx: 0, vty: 0 }, viewT: { scale: 1, tx: 0, ty: 0 }, viewInit: false, drag: null, pan: null, geom: { nodeH, year } };
   }
-  sim.current.geom = { nodeH, year };
+  sim.current.geom = { nodeH, year, ortho: style === 'tree' };
 
   // fit → camera target (founders centred; eases via spring)
-  const computeFit = () => {
+  const computeFit = (full) => {
     const el = wrapRef.current;if (!el) return null;
     // while the side panel is open, fit into the space left of it. The fit
     // target only refreshes on layout changes (scrubbing), resize or "Fit" —
@@ -532,10 +541,14 @@ function TreeCanvas({ layout, lang, style, year, showSideLinks, focusBranch, fam
     const NH = NODE_H[style],rGap = ROWGAP_FOR(style);
     const maxG = Math.max(0, ...Object.values(layout.pos).map((p) => p.gen));
     const cw = Math.max(layout.width, 420),ch = Math.max((maxG + 1) * (NH + rGap), 240);
-    if(W<600)return {scale:0.65,tx:W/2,ty:170};
     const scale = Math.max(Math.min((W - pad * 2) / cw, (H - pad * 2) / ch, 1.3), 0.035);
     const midX = (layout.minX + layout.maxX) / 2;
-    return { scale, tx: W / 2 - midX * scale, ty: Math.max(pad * 0.7, (H - ch * scale) / 2) };
+    const whole = { scale, tx: W / 2 - midX * scale, ty: Math.max(pad * 0.7, (H - ch * scale) / 2), fs: scale };
+    if (full) return whole;
+    // readable start: never smaller than a legible scale; stay centred on the founders (x = 0), top-down
+    const floor = W < 600 ? 0.62 : 0.5;
+    if (scale >= floor) return whole;
+    return { scale: floor, tx: W / 2, ty: W < 600 ? 150 : 150, fs: scale };
   };
 
   // ---- on layout / style change: update targets, edges, connectors, camera target ----
@@ -587,7 +600,7 @@ function TreeCanvas({ layout, lang, style, year, showSideLinks, focusBranch, fam
     setConns(s.conns);
     // camera
     const f = computeFit();
-    if (f) {s.viewT = { ...f };s.minScale = f.scale;if (!s.viewInit) {s.view = { ...f, vs: 0, vtx: 0, vty: 0 };s.viewInit = true;}}
+    if (f) {s.viewT = { ...f };s.minScale = f.fs || f.scale;if (!s.viewInit) {s.view = { ...f, vs: 0, vtx: 0, vty: 0 };s.viewInit = true;}}
   }, [layout, style, showSideLinks]);
 
   // before a couple marries, hold their cards apart — so the moment they wed,
@@ -735,7 +748,7 @@ function TreeCanvas({ layout, lang, style, year, showSideLinks, focusBranch, fam
     const k = ns / vt.scale;
     s.viewT = { scale: ns, tx: W - (W - vt.tx) * k, ty: H - (H - vt.ty) * k };
   };
-  const doFit = () => {const f = computeFit();if (f) sim.current.viewT = { ...f };};
+  const doFit = () => {const f = computeFit(true);if (f) sim.current.viewT = { ...f };};
   // edit-toolbar zoom buttons (mag glass lives in the toolbar during edit mode)
   useEffect(() => {
     const h = (e) => { const d = e.detail; if (d === 'fit') doFit(); else zoom(d); };
@@ -783,7 +796,7 @@ function TreeCanvas({ layout, lang, style, year, showSideLinks, focusBranch, fam
             if (c.kind === 'marriage') return (
               <g key={c.id}>
                 <line ref={(el) => connEls.current[c.id] = el} stroke="var(--amber)" strokeWidth="2"
-                strokeDasharray={c.type === 'partnership' ? '2 5' : 'none'} strokeLinecap="round" opacity="0" />
+                strokeDasharray={c.type === 'partnership' || style === 'tree' ? '2 4' : 'none'} strokeLinecap="round" opacity="0" />
                 <line ref={(el) => connEls.current[c.id + '_h'] = el} stroke="transparent" strokeWidth="16"
                 style={{ pointerEvents: 'stroke', cursor: 'help' }}
                 onMouseEnter={(e) => tipAt(e, c.label)} onMouseMove={(e) => tipAt(e, c.label)} onMouseLeave={hideTip} />
@@ -1069,7 +1082,7 @@ function updateConns(s, N, els, g) {
       const jx = (a.x + b.x) / 2,jy = (a.y + b.y) / 2 + nodeH / 2; // junction at couple's lower edge
       const x2 = ch.x,y2 = ch.y - nodeH / 2;
       const my = jy + (y2 - jy) * 0.5;
-      set(els[c.id], { d: `M ${jx} ${jy} C ${jx} ${my} ${x2} ${my} ${x2} ${y2}`, opacity: married ? vis : 0 });
+      set(els[c.id], { d: g.ortho ? `M ${jx} ${jy} V ${my} H ${x2} V ${y2}` : `M ${jx} ${jy} C ${jx} ${my} ${x2} ${my} ${x2} ${y2}`, opacity: married ? vis : 0 });
     } else if (c.kind === 'solo') {
       const a = N[c.a],ch = N[c.child];if (!a || !ch) return;
       const dim = Math.min(a.dim ?? 1, ch.dim ?? 1);
@@ -1077,7 +1090,7 @@ function updateConns(s, N, els, g) {
       const jx = a.x,jy = a.y + nodeH / 2;
       const x2 = ch.x,y2 = ch.y - nodeH / 2;
       const my = jy + (y2 - jy) * 0.5;
-      set(els[c.id], { d: `M ${jx} ${jy} C ${jx} ${my} ${x2} ${my} ${x2} ${y2}`, opacity: vis * 0.9 });
+      set(els[c.id], { d: g.ortho ? `M ${jx} ${jy} V ${my} H ${x2} V ${y2}` : `M ${jx} ${jy} C ${jx} ${my} ${x2} ${my} ${x2} ${y2}`, opacity: vis * 0.9 });
     } else {
       const a = N[c.from],b = N[c.to];if (!a || !b) return;
       const dim = Math.min(a.dim ?? 1, b.dim ?? 1);
