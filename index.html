@@ -1901,7 +1901,7 @@ function SettingsMenu({ lang, setLang, nameMode, setNameMode, showSide, setShowS
             </div>
           </div>
           <div className="sp-div" />
-          <div className="sp-sec">Tree</div>
+          <div className="sp-sec">עץ</div>
           <button className="sp-row" onClick={()=>setShowSide(s=>!s)}>
             <span className="sp-dot plum" /><span className="sp-lbl">קשרים נוספים</span><span className={'sp-tg plum'+(showSide?' on':'')} />
           </button>
@@ -1909,7 +1909,7 @@ function SettingsMenu({ lang, setLang, nameMode, setNameMode, showSide, setShowS
             <span className="sp-dot amber" /><span className="sp-lbl">מיקוד משפחתי</span><span className={'sp-tg amber'+(familyFocus?' on':'')} />
           </button>
           <div className="sp-div" />
-          <div className="sp-sec">Names</div>
+          <div className="sp-sec">שמות</div>
           <div className="sp-stack">
             <div className="sp-stack-lbl">תצוגת שמות</div>
             <div className="seg wide">
@@ -2002,7 +2002,7 @@ function TopBar({ lang, setLang, nameMode, setNameMode, showSide, setShowSide, f
       <div className="top-spacer" />
       <div className="top-controls">
         <SaveChip onOpen={onOpenPublish} />
-        <a className="pub-chip" href="dynasty.html">מקורות</a>
+        <a className="pub-chip" href="CHABAD-SOURCES.md" target="_blank">מקורות</a>
         <SettingsMenu lang={lang} setLang={setLang} nameMode={nameMode} setNameMode={setNameMode} showSide={showSide} setShowSide={setShowSide}
           familyFocus={familyFocus} setFamilyFocus={setFamilyFocus} lifeEffects={lifeEffects} setLifeEffects={setLifeEffects} />
         
@@ -2625,7 +2625,7 @@ function App() {
             editMode={editing}
             focusBranch={t.branchHighlight ? selectedId : null}
             familyFocus={familyFocus}
-            selectedId={selectedId} onSelect={select} onOpenFocus={openFocus} />
+            selectedId={selectedId} onSelect={select} onOpenFocus={select} />
         )}
 
         {worldEv && !focusId && (
@@ -2658,4 +2658,4 @@ function App() {
 ReactDOM.createRoot(document.getElementById('root')).render(<App />);
 </script>
 </body>
-</html>
+  </html>
